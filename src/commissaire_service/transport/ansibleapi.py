@@ -30,8 +30,6 @@ from ansible.executor.task_queue_manager import TaskQueueManager
 from ansible.plugins.callback import default
 from ansible.utils.display import Display
 
-from commissaire import constants as C
-from commissaire.models import Cluster, Network
 from commissaire.store.etcdstorehandler import EtcdStoreHandler
 
 
@@ -344,68 +342,29 @@ class Transport:
             host.address, key_file, play_file, [0, 3], disable_reconnect=True)
         return results
 
-    def _get_etcd_config(self, store_manager):
-        """
-        Extracts etcd configuration from a registered handler.
-        If no matching handler is found, return defaults for required values.
-
-        :returns: A dictionary of configuration values
-        :rtype: dict
-        """
-        # Need defaults for all required keys.
-        etcd_config = {
-            'server_url': EtcdStoreHandler.DEFAULT_SERVER_URL
-        }
-
-        entries = store_manager.list_store_handlers()
-        for handler_type, config, model_types in entries:
-            if handler_type is EtcdStoreHandler:
-                etcd_config.update(config)
-                break
-
-        return etcd_config
-
-    def bootstrap(self, ip, cluster_data, key_file, store_manager, oscmd):
+    def bootstrap(self, ip, key_file, oscmd, etcd_config, cluster, network):
         """
         Bootstraps a host via ansible.
 
         :param ip: IP address to bootstrap.
         :type ip: str
-        :param cluster_data: The data required to create a Cluster instance.
-        :type cluster_data: dict or None
         :param key_file: Full path to the file holding the private SSH key.
         :type key_file: str
-        :param store_manager: Remote object for remote stores
-        :type store_manager: commissaire.store.storehandlermanager.
-                             StoreHandlerManager
         :param oscmd: OSCmd class to use
         :type oscmd: commissaire_service.oscmd.OSCmdBase
+        :param etcd_config: An EtcdStoreHandler configuration
+        :type etcd_config: dict
+        :param cluster: A cluster model for the host
+        :type cluster: commissaire.models.Cluster
+        :param network: A network model for the host's cluster
+        :type network: commissaire.models.Network
         :returns: tuple -- (exitcode(int), facts(dict)).
         """
         self.logger.debug('Using {0} as the oscmd class for {1}'.format(
             oscmd.os_type, ip))
 
-        # cluster_data can be None. If it is change it to an empty dict
-        if cluster_data is None:
-            cluster_data = {}
-        cluster_type = C.CLUSTER_TYPE_HOST
-        network = Network.new(**C.DEFAULT_CLUSTER_NETWORK_JSON)
-        try:
-            self.logger.debug('Grabbing cluster type from {0}'.format(
-                cluster_data))
-            cluster = Cluster.new(**cluster_data)
-            cluster_type = cluster.type
-            self.logger.debug('Found network {0}'.format(
-                cluster.network))
-            network = store_manager.get(Network.new(name=cluster.network))
-        except KeyError:
-            # Not part of a cluster
-            pass
-
-        etcd_config = self._get_etcd_config(store_manager)
-
         play_vars = {
-            'commissaire_cluster_type': cluster_type,
+            'commissaire_cluster_type': cluster.type,
             'commissaire_bootstrap_ip': ip,
             # TODO: Where do we get this?
             'commissaire_docker_registry_host': '127.0.0.1',

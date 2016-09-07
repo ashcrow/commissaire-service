@@ -8,6 +8,7 @@ Subpackages
 
     commissaire_service.service
     commissaire_service.storage
+    commissaire_service.investigator
 
 Module contents
 ---------------
