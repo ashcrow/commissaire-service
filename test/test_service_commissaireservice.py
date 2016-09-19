@@ -80,16 +80,6 @@ class TestCommissaireService(TestCase):
         self._producer.assert_called_once_with(
             self.service_instance._channel, self.service_instance._exchange)
 
-    def test_create_id(self):
-        """
-        Verify CommissaireService.create_id makes a unique identifier.
-        """
-        uid = CommissaireService.create_id()
-        # It should be a string
-        self.assertIs(str, type(uid))
-        # And it should be 36 chars in length (uuid.uuid4())
-        self.assertEquals(len(ID), len(uid))
-
     def test_get_consumers(self):
         """
         Verify CommissaireService.get_consumers properly sets consumers.
@@ -130,40 +120,6 @@ class TestCommissaireService(TestCase):
                 'id': ID,
                 'result': payload,
             })
-        # And finally the queue should be closed
-        self.service_instance.connection.SimpleQueue.__call__(
-            ).close.assert_called_once_with()
-
-    def test_request(self):
-        """
-        Verify CommissaireService.request can request method calls.
-        """
-        routing_key = 'routing_key'
-        method = 'ping'
-        params = {}
-        queue_opts={'durable': False, 'auto_delete': True}
-
-        self.service_instance.request(
-            routing_key, method, params=params)
-        # A new SimpleQueue should have been created
-        self.service_instance.connection.SimpleQueue.assert_called_once_with(
-            mock.ANY,
-            queue_opts=queue_opts
-        )
-        # A jsonrpc message should have been published to the bus
-        self.service_instance.producer.publish.assert_called_once_with(
-            {
-                'jsonrpc': "2.0",
-                'id': mock.ANY,
-                'method': method,
-                'params': params,
-            },
-            routing_key,
-            declare=[self.service_instance._exchange],
-            reply_to=mock.ANY)
-        # The simple queue should be used to get a response
-        self.service_instance.connection.SimpleQueue.__call__(
-            ).get.assert_called_once_with(block=True, timeout=mock.ANY)
         # And finally the queue should be closed
         self.service_instance.connection.SimpleQueue.__call__(
             ).close.assert_called_once_with()

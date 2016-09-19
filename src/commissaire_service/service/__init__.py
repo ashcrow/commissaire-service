@@ -20,9 +20,10 @@ import json
 import logging
 import multiprocessing
 import traceback
-import uuid
 
 from time import sleep
+
+from commissaire.bus import BusMixin
 
 from kombu import Connection, Exchange, Producer, Queue
 from kombu.mixins import ConsumerMixin
@@ -110,7 +111,7 @@ class ServiceManager:
             sleep(1)
 
 
-class CommissaireService(ConsumerMixin):
+class CommissaireService(ConsumerMixin, BusMixin):
     """
     An example prototype CommissaireService base class.
     """
@@ -146,16 +147,6 @@ class CommissaireService(ConsumerMixin):
         # Create producer for publishing on topics
         self.producer = Producer(self._channel, self._exchange)
         self.logger.debug('Initializing finished')
-
-    @classmethod
-    def create_id(cls):
-        """
-        Creates a new unique identifier.
-
-        :returns: A unique identification string.
-        :rtype: str
-        """
-        return str(uuid.uuid4())
 
     def get_consumers(self, Consumer, channel):
         """
@@ -295,81 +286,14 @@ class CommissaireService(ConsumerMixin):
         self.logger.debug('Sent response for message id "{}"'.format(id))
         send_queue.close()
 
-    def request(self, routing_key, method, params={}, **kwargs):
-        """
-        Sends a request to a simple queue. Requests create the initial response
-        queue and wait for a response.
-
-        :param routing_key: The routing key to publish on.
-        :type routing_key: str
-        :param method: The remote method to request.
-        :type method: str
-        :param params: Keyword parameters to pass to the remote method.
-        :type params: dict
-        :param kwargs: Keyword arguments to pass to SimpleQueue
-        :type kwargs: dict
-        :returns: Result
-        :rtype: tuple
-        """
-        id = self.create_id()
-        response_queue_name = 'response-{}'.format(id)
-        self.logger.debug('Creating response queue "{}"'.format(
-            response_queue_name))
-        queue_opts = {
-            'auto_delete': True,
-            'durable': False,
-        }
-        if kwargs.get('queue_opts'):
-            queue_opts.update(kwargs.pop('queue_opts'))
-
-        self.logger.debug('Response queue arguments: {}'.format(kwargs))
-
-        response_queue = self.connection.SimpleQueue(
-            response_queue_name,
-            queue_opts=queue_opts,
-            **kwargs)
-
-        jsonrpc_msg = {
-            'jsonrpc': "2.0",
-            'id': id,
-            'method': method,
-            'params': params,
-        }
-        self.logger.debug('jsonrpc message for id "{}": "{}"'.format(
-            id, jsonrpc_msg))
-
-        self.producer.publish(
-            jsonrpc_msg,
-            routing_key,
-            declare=[self._exchange],
-            reply_to=response_queue_name)
-
-        self.logger.debug(
-            'Sent message id "{}" to "{}". Waiting on response...'.format(
-                id, response_queue_name))
-
-        result = response_queue.get(block=True, timeout=3)
-        result.ack()
-
-        if 'error' in result.payload.keys():
-            self.logger.warn(
-                'Error returned from the message id "{}"'.format(
-                    id, result.payload))
-
-        self.logger.debug(
-            'Result retrieved from response queue "{}": payload="{}"'.format(
-                response_queue_name, result))
-        self.logger.debug('Closing queue {}'.format(response_queue_name))
-        response_queue.close()
-        return result.payload
-
     def onconnection_revived(self):  # pragma: no cover
         """
         Called when a reconnection occurs.
         """
         self.logger.info('Connection (re)established')
 
-    def on_consume_ready(self, connection, channel, consumers):  # pragma: no cover # NOQA
+    def on_consume_ready(
+            self, connection, channel, consumers):  # pragma: no cover
         """
         Called when the service is ready to consume messages.
 
