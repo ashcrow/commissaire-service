@@ -17,14 +17,8 @@ import logging
 
 from copy import deepcopy
 
+from commissaire.config import ConfigurationError
 from commissaire.models import ValidationError
-
-
-class ConfigurationError(Exception):
-    """
-    Exception class for user configuration errors.
-    """
-    pass
 
 
 class StoreHandlerManager(object):
