@@ -18,6 +18,8 @@
 Source build and installation script.
 """
 
+import pip
+
 from setuptools import setup, find_packages
 
 
@@ -29,8 +31,15 @@ def extract_names(filename):
 
 
 def extract_requirements(filename):
-    with open(filename, 'r') as requirements_file:
-        return [x[:-1] for x in requirements_file.readlines()]
+    requirements = []
+    for x in pip.req.parse_requirements(
+            filename, session=pip.download.PipSession()):
+        if x.req:
+            requirements.append(str(x.req))
+        elif x.link:
+            print('\nIgnoring {} ({})'.format(x.link.url, x.comes_from))
+            print('To install it run: pip install {}\n'.format(x.link.url))
+    return requirements
 
 
 install_requires = extract_requirements('requirements.txt')
