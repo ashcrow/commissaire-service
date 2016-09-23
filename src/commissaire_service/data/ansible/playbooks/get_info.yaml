@@ -1,0 +1,31 @@
+# Copyright (C) 2016  Red Hat, Inc
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+---
+- hosts: commissaire_targets
+  name: gather
+  gather_facts: yes
+  tasks:
+    - set_fact:
+        is_atomic: False
+    - name: Checking for Atomic model
+      stat:
+        path: /run/ostree-booted
+      register: ostree_booted
+      ignore_errors: True
+    - name: Update is_atomic if using the Atomic model
+      set_fact:
+        is_atomic: "{{ ostree_booted.stat.exists }}"
+      when: ostree_booted.stat.exists is defined
+    - debug: msg="is_atomic={{ is_atomic }}"
