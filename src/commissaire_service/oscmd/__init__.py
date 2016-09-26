@@ -30,16 +30,6 @@ class OSCmdBase:
     docker_config = '/etc/sysconfig/docker'
     #: Full path to the flanneld configuration file
     flanneld_config = '/etc/sysconfig/flanneld'
-    #: Full path to kubernetes configuration file
-    kubernetes_config = '/etc/kubernetes/config'
-    #: Full path to kubernetes kubeconfig file
-    kubernetes_kubeconfig = '/var/lib/kubelet/kubeconfig'
-    #: Full path to kubelet configuration file
-    kubelet_config = '/etc/kubernetes/kubelet'
-    #: Full path to the kubernetes client certificate
-    kube_client_cert = '/etc/kubernetes/client.crt'
-    #: Full path to the kubernetes client key
-    kube_client_key = '/etc/kubernetes/client.key'
     #: Full path to the etcd client certificate
     etcd_client_cert = '/etc/etcd/client.crt'
     #: Full path to the etcd client key
@@ -51,10 +41,6 @@ class OSCmdBase:
     docker_service = 'docker'
     #: Flannel service name
     flannel_service = 'flanneld'
-    #: Kubernetes kubelet service name
-    kubelet_service = 'kubelet'
-    #: Kubernetes kube-proxy service name
-    kubelet_proxy_service = 'kube-proxy'
 
     @classmethod
     def deploy(cls, version):
@@ -124,17 +110,6 @@ class OSCmdBase:
         """
         raise NotImplementedError(
             '{0}.install_flannel() must be overriden.'.format(cls.__name__))
-
-    @classmethod
-    def install_kube(cls):
-        """
-        Install Kube command. Must be overriden.
-
-        :return: The command to execute as a list
-        :rtype: list
-        """
-        raise NotImplementedError(
-            '{0}.install_kube() must be overriden.'.format(cls.__name__))
 
 
 def get_oscmd(os_type):

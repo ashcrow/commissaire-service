@@ -90,13 +90,3 @@ class OSCmd(OSCmdBase):
         :rtype: list
         """
         return ['dnf', 'install', '-y', 'flannel']
-
-    @classmethod
-    def install_kube(cls):
-        """
-        Fedora install Kube command.
-
-        :return: The command to execute as a list
-        :rtype: list
-        """
-        return ['dnf', 'install', '-y', 'kubernetes-node']

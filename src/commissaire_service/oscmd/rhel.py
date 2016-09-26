@@ -72,16 +72,6 @@ class OSCmd(OSCmdBase):
         return ['yum', 'install', '-y', 'docker']
 
     @classmethod
-    def install_kube(cls):
-        """
-        RHEL start Kube command.
-
-        :return: The command to execute as a list
-        :rtype: list
-        """
-        return ['yum', 'install', '-y', 'kubernetes-node']
-
-    @classmethod
     def install_flannel(cls):
         """
         Atomic install flannel command.
