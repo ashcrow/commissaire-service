@@ -33,7 +33,6 @@ from ansible.utils.display import Display
 from commissaire import constants as C
 from commissaire.models import Cluster, Network
 from commissaire.store.etcdstorehandler import EtcdStoreHandler
-from commissaire.store.kubestorehandler import KubernetesStoreHandler
 
 
 class LogForward(default.CallbackModule):
@@ -366,28 +365,6 @@ class Transport:
 
         return etcd_config
 
-    def _get_kube_config(self, store_manager):
-        """
-        Extracts Kubernetes configuration from a registered handler.
-        If no matching handler is found, return defaults for required values.
-
-        :returns: A dictionary of configuration values
-        :rtype: dict
-        """
-        # Need defaults for all required keys.
-        kube_config = {
-            'server_url': KubernetesStoreHandler.DEFAULT_SERVER_URL,
-            'token': ''
-        }
-
-        entries = store_manager.list_store_handlers()
-        for handler_type, config, model_types in entries:
-            if handler_type is KubernetesStoreHandler:
-                kube_config.update(config)
-                break
-
-        return kube_config
-
     def bootstrap(self, ip, cluster_data, key_file, store_manager, oscmd):
         """
         Bootstraps a host via ansible.
@@ -426,13 +403,10 @@ class Transport:
             pass
 
         etcd_config = self._get_etcd_config(store_manager)
-        kube_config = self._get_kube_config(store_manager)
 
         play_vars = {
             'commissaire_cluster_type': cluster_type,
             'commissaire_bootstrap_ip': ip,
-            'commissaire_kubernetes_api_server_url': kube_config['server_url'],
-            'commissaire_kubernetes_bearer_token': kube_config['token'],
             # TODO: Where do we get this?
             'commissaire_docker_registry_host': '127.0.0.1',
             # TODO: Where do we get this?
@@ -443,26 +417,14 @@ class Transport:
                 'commissaire', 'data/templates/docker'),
             'commissaire_flanneld_config_local': resource_filename(
                 'commissaire', 'data/templates/flanneld'),
-            'commissaire_kubelet_config_local': resource_filename(
-                'commissaire', 'data/templates/kubelet'),
-            'commissaire_kubernetes_config_local': resource_filename(
-                'commissaire', 'data/templates/kube_config'),
-            'commissaire_kubeconfig_config_local': resource_filename(
-                'commissaire', 'data/templates/kubeconfig'),
             'commissaire_install_libselinux_python': " ".join(
                 oscmd.install_libselinux_python()),
             'commissaire_docker_config': oscmd.docker_config,
             'commissaire_flanneld_config': oscmd.flanneld_config,
-            'commissaire_kubelet_config': oscmd.kubelet_config,
-            'commissaire_kubernetes_config': oscmd.kubernetes_config,
-            'commissaire_kubeconfig_config': oscmd.kubernetes_kubeconfig,
             'commissaire_install_flannel': " ".join(oscmd.install_flannel()),
             'commissaire_install_docker': " ".join(oscmd.install_docker()),
-            'commissaire_install_kube': " ".join(oscmd.install_kube()),
             'commissaire_flannel_service': oscmd.flannel_service,
-            'commissaire_docker_service': oscmd.flannel_service,
-            'commissaire_kubelet_service': oscmd.kubelet_service,
-            'commissaire_kubeproxy_service': oscmd.kubelet_proxy_service,
+            'commissaire_docker_service': oscmd.flannel_service
         }
 
         # If we are a flannel_server network then set the var
@@ -492,17 +454,6 @@ class Transport:
                 oscmd.etcd_client_key)
             play_vars['commissaire_etcd_client_key_path_local'] = (
                 etcd_config['certificate_key_path'])
-
-        if 'certificate_path' in kube_config:
-            self.logger.info('Using kubernetes client certs')
-            play_vars['commissaire_kubernetes_client_cert_path'] = (
-                oscmd.kube_client_cert)
-            play_vars['commissaire_kubernetes_client_cert_path_local'] = (
-                kube_config['certificate_path'])
-            play_vars['commissaire_kubernetes_client_key_path'] = (
-                oscmd.kube_client_key)
-            play_vars['commissaire_kubernetes_client_key_path_local'] = (
-                kube_config['certificate_key_path'])
 
         # XXX: Need to enable some package repositories for OS 'rhel'
         #      (or 'redhat').  This is a hack for a single corner case.
