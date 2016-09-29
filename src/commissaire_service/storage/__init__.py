@@ -15,7 +15,6 @@
 
 import fnmatch
 import importlib
-import json
 
 import commissaire.models as models
 
@@ -120,7 +119,7 @@ class StorageService(CommissaireService):
         :rtype: commissaire_service.storage.models.Model
         """
         model_type = self._model_types[model_type_name]
-        return model_type.new(**model_json_data)
+        return model_type.new(**model_kwargs)
 
     def on_save(self, message, model_type_name, model_json_data):
         """
