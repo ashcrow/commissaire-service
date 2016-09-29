@@ -197,12 +197,38 @@ class StorageService(CommissaireService):
         return [model_instance.to_json() for model_instance in model_list]
 
 
-if __name__ == '__main__':
+def main():  # pragma: no cover
+    """
+    Main entry point.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-c', '--config', required=True, type=str,
+        help='Configuration file to use.')
+    parser.add_argument(
+        '--bus-exchange', type=str, default='commissaire',
+        help='Message bus exchange name.')
+    parser.add_argument(
+        '--bus-uri', type=str, metavar='BUS_URI',
+        default='redis://127.0.0.1:6379/',  # FIXME: Remove before release
+        help=(
+            'Message bus connection URI. See:'
+            'http://kombu.readthedocs.io/en/latest/userguide/connections.html')
+    )
+
+    args = parser.parse_args()
+
     try:
         service = StorageService(
-            exchange_name='commissaire',
-            connection_url='redis://127.0.0.1:6379/',
-            config_file=None)
+            exchange_name=args.bus_exchange,
+            connection_url=args.bus_uri,
+            config_file=args.config)
         service.run()
     except KeyboardInterrupt:
         pass
+
+
+if __name__ == '__main__':  # pragma: no cover
+    main()

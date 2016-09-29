@@ -58,5 +58,10 @@ setup(
     install_requires=install_requires,
     tests_require=test_require,
     package_dir={'': 'src'},
-    packages=find_packages('src')
+    packages=find_packages('src'),
+    entry_points={
+        'console_scripts': [
+            'commissaire-storage-service = commissaire_service.storage:main',
+        ],
+    }
 )
