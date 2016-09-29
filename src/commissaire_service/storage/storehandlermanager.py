@@ -17,7 +17,7 @@ import logging
 
 from copy import deepcopy
 
-from commissaire.config import ConfigurationError
+from commissaire.util.config import ConfigurationError
 from commissaire.models import ValidationError
 
 

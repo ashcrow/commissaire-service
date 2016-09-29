@@ -20,7 +20,7 @@ import json
 import commissaire.models as models
 
 from commissaire import constants as C
-from commissaire.config import ConfigurationError, read_config_file
+from commissaire.util.config import ConfigurationError, read_config_file
 
 from commissaire_service.service import CommissaireService
 from commissaire_service.storage.storehandlermanager import (
