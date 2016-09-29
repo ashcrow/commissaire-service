@@ -203,6 +203,32 @@ class StorageService(CommissaireService):
         return [model_instance.to_dict(secure=secure)
                 for model_instance in model_list]
 
+    def on_list_store_handlers(self, message):
+        """
+        Handler for the "storage.list_store_handlers" routing key.
+
+        Returns a list of registered store handlers as dictionaries.
+        Each dictionary contains the following:
+
+           'handler_type' : Type name of the store handler
+           'config'       : Dictionary of configuration values
+           'model_types'  : List of model type names handled
+
+        :param message: A message instance
+        :type message: kombu.message.Message
+        """
+        result = []
+        handlers = self._manager.list_store_handlers()
+        for handler_type, config, model_types in handlers:
+            model_types = [mt.__name__ for mt in model_types]
+            model_types.sort()  # Just for readability
+            result.append({
+                'handler_type': handler_type.__name__,
+                'config': config,
+                'model_types': model_types
+            })
+        return result
+
 
 def main():  # pragma: no cover
     """
