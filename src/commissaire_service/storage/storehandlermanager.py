@@ -95,7 +95,7 @@ class StoreHandlerManager(object):
         :rtype: list
         """
         # This collects all unique instances from the registry.
-        entries = {id(x): x for x in self._registry.values()}.values()
+        entries = list({id(x): x for x in self._registry.values()}.values())
         entries.extend(self._registry_extras)
         return entries
 
