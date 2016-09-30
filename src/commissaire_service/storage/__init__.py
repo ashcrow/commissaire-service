@@ -140,7 +140,7 @@ class StorageService(CommissaireService):
         """
         model_instance = self._build_model(model_type_name, model_json_data)
         saved_model_instance = self._manager.save(model_instance)
-        return saved_model_instance.__dict__
+        return saved_model_instance.to_dict()
 
     def on_get(self, message, model_type_name, model_json_data):
         """
@@ -160,7 +160,7 @@ class StorageService(CommissaireService):
         """
         model_instance = self._build_model(model_type_name, model_json_data)
         full_model_instance = self._manager.get(model_instance)
-        return full_model_instance.__dict__
+        return full_model_instance.to_dict()
 
     def on_delete(self, message, model_type_name, model_json_data):
         """
@@ -194,7 +194,7 @@ class StorageService(CommissaireService):
         """
         model_type = self._model_types[model_type_name]
         model_list = self._manager.list(model_type.new())
-        return [model_instance.__dict__ for model_instance in model_list]
+        return [model_instance.to_dict() for model_instance in model_list]
 
 
 def main():  # pragma: no cover
