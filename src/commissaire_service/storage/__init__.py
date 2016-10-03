@@ -16,6 +16,8 @@
 import fnmatch
 import importlib
 
+from time import sleep
+
 import commissaire.models as models
 
 from commissaire import constants as C
@@ -228,6 +230,41 @@ class StorageService(CommissaireService):
                 'model_types': model_types
             })
         return result
+
+    def on_node_registered(self, message, cluster_type, address):
+        """
+        Checks if a cluster node at the given address is registered on a
+        cluster of the given type.  This method may take several seconds
+        to complete if the cluster node is unresponsive, as it retries a
+        few times with a sleep delay.
+
+        :param message: A message instance
+        :type message: kombu.message.Message
+        :param cluster_type: A cluster type constant
+        :type cluster_type: str
+        :param address: Address of the cluster node
+        :type address: str
+        :returns: Whether the node is registered
+        :rtype: bool
+        """
+        for con_mgr in self._manager.list_container_managers(cluster_type):
+            # Try 3 times waiting 5 seconds each time before giving up.
+            for attempt in range(3):
+                if con_mgr.node_registered(address):
+                    self.logger.info(
+                        '{0} has been registered with the '
+                        'container manager'.format(address))
+                    return True
+                if attempt == 2:
+                    self.logger.warn(
+                        'Could not register with the container manager')
+                    return False
+                self.logger.debug(
+                    '{0} has not been registered with the container '
+                    'manager. Checking again in 5 seconds...'.format(
+                        address))
+                sleep(5)
+        return False
 
 
 def main():  # pragma: no cover
