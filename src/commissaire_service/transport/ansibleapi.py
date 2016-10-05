@@ -18,86 +18,10 @@ Ansible API transport.
 
 import logging
 
-from collections import namedtuple
 from pkg_resources import resource_filename
 from time import sleep
 
-from ansible.parsing.dataloader import DataLoader
-from ansible.vars import VariableManager
-from ansible.inventory import Inventory, Host, Group
-from ansible.playbook.play import Play
-from ansible.executor.task_queue_manager import TaskQueueManager
-from ansible.plugins.callback import default
-from ansible.utils.display import Display
-
-from commissaire.store.etcdstorehandler import EtcdStoreHandler
-
-
-class LogForward(default.CallbackModule):
-    """
-    Forwards Ansible's output into a logger.
-    """
-    #: Version required for this callback
-    CALLBACK_VERSION = 2.0
-    #: Kind of callback
-    CALLBACK_TYPE = 'log'
-    #: Name of the callback
-    CALLBACK_NAME = 'logforward'
-    #: Does it require a callback
-    CALLBACK_NEEDS_WHITELIST = False
-
-    def __init__(self):
-        """
-        Creates the instance and sets the logger.
-        """
-        display = Display()
-        self.log = logging.getLogger('transport')
-        # TODO: Make verbosity more configurable
-        display.verbosity = 1
-        if logging.getLevelName(self.log.level) == 'DEBUG':
-            display.verbosity = 5
-        # replace Displays display method with our own
-        display.display = lambda msg, *a, **k: self.log.info(msg)
-        super(LogForward, self).__init__(display)
-
-    def v2_runner_on_failed(self, result, *args, **kwargs):
-        """
-        Called when the runner failed.
-
-        :param result: Ansible's result.
-        :type result: ansible.executor.task_result.TaskResult
-        :param args: All other ignored non-keyword arguments.
-        :type args: tuple
-        :param kwargs: All other ignored keyword arguments.
-        :type kwargs: dict
-        """
-        if 'exception' in result._result.keys():
-            self.log.warn(
-                'An exception occurred for {0}: {1}'.format(
-                    result._host.get_name(), result._result['exception']))
-            self.log.debug('{0}'.format(result.__dict__))
-
-    def v2_runner_on_skipped(self, result):
-        """
-        Called when ansible skips a host.
-
-        :param result: Ansible's result.
-        :type result: ansible.executor.task_result.TaskResult
-        """
-        self.log.warn('SKIPPED {0}: {1}'.format(
-            result._host.get_name(), result._task.get_name().strip()))
-        self.log.debug('{0}'.format(result.__dict__))
-
-    def v2_runner_on_unreachable(self, result):
-        """
-        Called when a host can not be reached.
-
-        :param result: Ansible's result.
-        :type result: ansible.executor.task_result.TaskResult
-        """
-        self.log.warn('UNREACHABLE {0}: {1}'.format(
-            result._host.get_name(), result._task.get_name().strip()))
-        self.log.debug('{0}'.format(result.__dict__))
+from .ansible_wrapper import execute_playbook
 
 
 class Transport:
@@ -110,17 +34,40 @@ class Transport:
         Creates an instance of the Transport.
         """
         self.logger = logging.getLogger('transport')
-        self.Options = namedtuple(
-            'Options', ['connection', 'module_path', 'forks', 'remote_user',
-                        'private_key_file', 'ssh_common_args',
-                        'ssh_extra_args', 'sftp_extra_args', 'scp_extra_args',
-                        'become', 'become_method', 'become_user', 'verbosity',
-                        'check'])
         # initialize needed objects
-        self.variable_manager = VariableManager()
-        self.loader = DataLoader()
-        self.passwords = {}
         self.remote_user = remote_user
+
+    def _get_ansible_args(self, key_file):
+        """
+        Returns a list of additional command-line arguments to pass to
+        Ansible.
+
+        :param key_file: Full path to the file holding the private SSH key.
+        :type key_file: str
+        :returns: A list of command-line arguments.
+        :rtype: list
+        """
+        ssh_args = ('-o StrictHostKeyChecking=no '
+                    '-o ControlMaster=auto '
+                    '-o ControlPersist=60s')
+
+        ansible_args = [
+            '--connection', 'ssh',
+            '--private-key', key_file,
+            '--user', self.remote_user,
+            '--forks', '1',
+            '--ssh-common-args', ssh_args
+        ]
+
+        if self.remote_user != 'root':
+            self.logger.debug('Using user {0} for ssh communication.'.format(
+                self.remote_user))
+            ansible_args.extend([
+                '--become',
+                '--become-user', 'root',
+                '--become-method', 'sudo'])
+
+        return ansible_args
 
     def _run(self, ips, key_file, play_file,
              expected_results=[0], play_vars={}, disable_reconnect=False):
@@ -130,7 +77,7 @@ class Transport:
         :param ips: IP address(es) to check.
         :type ips: str or list
         :param key_file: Full path to the file holding the private SSH key.
-        :type key_file: string
+        :type key_file: str
         :param play_file: Path to the ansible play file.
         :type play_file: str
         :param expected_results: List of expected return codes. Default: [0]
@@ -140,95 +87,34 @@ class Transport:
         :returns: Ansible exit code
         :type: int
         """
-        if type(ips) != list:
-            ips = [ips]
+        ansible_args = self._get_ansible_args(key_file)
+        if play_vars:
+            ansible_args.extend(['--extra-vars', json.dumps(play_vars)])
 
-        ssh_args = ('-o StrictHostKeyChecking=no -o '
-                    'ControlMaster=auto -o ControlPersist=60s')
-        become = {
-            'become': None,
-            'become_user': None,
-        }
-        if self.remote_user != 'root':
-            self.logger.debug('Using user {0} for ssh communication.'.format(
-                self.remote_user))
-            become['become'] = True
-            become['become_user'] = 'root'
-
-        options = self.Options(
-            connection='ssh', module_path=None, forks=1,
-            remote_user=self.remote_user, private_key_file=key_file,
-            ssh_common_args=ssh_args, ssh_extra_args=ssh_args,
-            sftp_extra_args=None, scp_extra_args=None,
-            become=become['become'], become_method='sudo',
-            become_user=become['become_user'],
-            verbosity=None, check=False)
-        # create inventory and pass to var manager
-        inventory = Inventory(
-            loader=self.loader,
-            variable_manager=self.variable_manager,
-            host_list=ips)
-        self.logger.debug('Options: {0}'.format(options))
-
-        group = Group('commissaire_targets')
-        for ip in ips:
-            host = Host(ip, 22)
-            group.add_host(host)
-
-        inventory.groups.update({'commissaire_targets': group})
-        self.logger.debug('Inventory: {0}'.format(inventory))
-
-        self.variable_manager.set_inventory(inventory)
-
-        play_source = self.loader.load_from_file(play_file)[0]
-        play = Play().load(
-            play_source,
-            variable_manager=self.variable_manager,
-            loader=self.loader)
-
-        # Add any variables provided into the play
-        play.vars.update(play_vars)
-
-        self.logger.debug(
-            'Running play for hosts {0}: play={1}, vars={2}'.format(
-                ips, play_source, play.vars))
+        self.logger.debug('Ansible arguments: {}'.format(ansible_args))
 
         # actually run it
-        for cnt in range(0, 3):
-            tqm = None
-            try:
-                tqm = TaskQueueManager(
-                    inventory=inventory,
-                    variable_manager=self.variable_manager,
-                    loader=self.loader,
-                    options=options,
-                    passwords=self.passwords,
-                    stdout_callback=LogForward(),
-                )
-                result = tqm.run(play)
+        for attempt in range(0, 3):
+            result = execute_playbook(play_file, ips, ansible_args)
 
-                # Deal with unreachable hosts (result == 3) by retrying
-                # up to 3 times, sleeping 5 seconds after each attempt.
-                if disable_reconnect:
-                    self.logger.warn(
-                        'Not attempting to reconnect to {0}'.format(ips))
-                    break
-                elif result == 3 and cnt < 2:
-                    self.logger.warn(
-                        'One or more hosts in {0} is unreachable, '
-                        'retrying in 5 seconds...'.format(ips))
-                    sleep(5)
-                else:
-                    break
-            finally:
-                if tqm is not None:
-                    self.logger.debug(
-                        'Cleaning up after the TaskQueueManager.')
-                    tqm.cleanup()
+            # Deal with unreachable hosts (result == 3) by retrying
+            # up to 3 times, sleeping 5 seconds after each attempt.
+            if disable_reconnect:
+                self.logger.warn(
+                    'Not attempting to reconnect to {0}'.format(ips))
+                break
+            elif result == 3 and attempt < 2:
+                self.logger.warn(
+                    'One or more hosts in {0} is unreachable, '
+                    'retrying in 5 seconds...'.format(ips))
+                sleep(5)
+            else:
+                break
 
         if result in expected_results:
             self.logger.debug('{0}: Good result {1}'.format(ip, result))
-            fact_cache = self.variable_manager._fact_cache.get(ip, {})
+            # FIXME How do we get facts out of Ansible now?
+            fact_cache = {}
             return (result, fact_cache)
 
         self.logger.debug('{0}: Bad result {1}'.format(ip, result))
