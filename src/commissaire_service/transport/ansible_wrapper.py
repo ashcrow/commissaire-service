@@ -59,10 +59,44 @@ class LogForward(Display):
 display = LogForward()
 # END MONKEY PATCH. Add code after this line.
 
+import json
 import os  # Used for expanding paths
+import subprocess
 
 from ansible.cli.playbook import PlaybookCLI
 from ansible.errors import AnsibleOptionsError, AnsibleParserError
+
+def gather_facts(host, args=[]):
+    """
+    Returns a dictionary of facts gathered by Ansible from a host.
+
+    :param host: A host to gather facts from.
+    :type host: str
+    :param args: Other arguments to pass to the run.
+    :type args: list
+    :returns: A dictionary of facts
+    :rtype: dict
+    :raises subprocess.CalledProcessError: if Ansible returns a non-zero
+                                           exit status
+    """
+    host = host.strip()
+    cli_args = ['ansible', host, '--module-name', 'setup'] + args
+    logger.info('Executing: {}'.format(' '.join(cli_args)))
+    try:
+        completed_process = subprocess.run(
+            cli_args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            check=True)
+        # Output line is '$host | SUCCESS => { ... }'
+        host_result, json_facts = completed_process.stdout.split(' => ', 1)
+        return json.loads(json_facts)
+    except subprocess.CalledProcessError as error:
+        logger.error('Ansible returned non-zero exit status {}'.format(
+            error.returncode))
+        logger.error('{}'.format(error.stderr))
+        raise error
 
 def execute_playbook(playbook, hosts, args=[]):
     """
