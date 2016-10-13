@@ -113,11 +113,11 @@ class Transport:
                 break
 
         if result in expected_results:
-            self.logger.debug('{0}: Good result {1}'.format(ip, result))
+            self.logger.debug('{0}: Good result {1}'.format(ips, result))
             return result
 
-        self.logger.debug('{0}: Bad result {1}'.format(ip, result))
-        raise Exception('Can not run for {0}'.format(ip))
+        self.logger.debug('{0}: Bad result {1}'.format(ips, result))
+        raise Exception('Can not run for {0}'.format(ips))
 
     def deploy(self, ips, key_file, oscmd, kwargs):
         """
