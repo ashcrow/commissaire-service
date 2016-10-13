@@ -16,6 +16,7 @@
 Ansible API transport.
 """
 
+import json
 import logging
 
 from pkg_resources import resource_filename
