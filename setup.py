@@ -61,8 +61,10 @@ setup(
     packages=find_packages('src'),
     entry_points={
         'console_scripts': [
-            'commissaire-storage-service = commissaire_service.storage:main',
-            'commissaire-investigator-service = commissaire_service.investigator:main'
+            ('commissaire-storage-service = '
+             'commissaire_service.storage:main'),
+            ('commissaire-investigator-service = '
+             'commissaire_service.investigator:main'),
         ],
     }
 )
