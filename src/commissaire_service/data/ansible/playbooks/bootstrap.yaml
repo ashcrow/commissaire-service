@@ -17,6 +17,17 @@
   hosts: commissaire_targets
   gather_facts: no
   tasks:
+    - set_fact:
+        is_atomic: False
+    - name: Checking for Atomic model
+      stat:
+        path: /run/ostree-booted
+      register: ostree_booted
+      ignore_errors: True
+    - name: Update is_atomic if using the Atomic model
+      set_fact:
+        is_atomic: "{{ ostree_booted.stat.exists }}"
+      when: ostree_booted.stat.exists is defined
     - debug: msg="is_atomic={{ is_atomic }}"
     - name: Enable Package Repositories
       command: "{{ commissaire_enable_pkg_repos }}"
