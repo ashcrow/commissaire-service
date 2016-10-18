@@ -1,7 +1,7 @@
-kombu
-python-etcd
-requests
-sphinx_rtd_theme
-git+https://github.com/projectatomic/commissaire.git
-redis
-ansible>=2.1,<2.2
+kombu #license=BSD
+sphinx_rtd_theme #license=BSD
+python-etcd #license=MIT
+requests #license=ASLv2.0
+git+https://github.com/projectatomic/commissaire.git #license=GPLv3
+redis #license=MIT
+ansible>=2.1,<2.3 #license=GPLv3

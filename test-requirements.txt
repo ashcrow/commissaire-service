@@ -1,5 +1,5 @@
-tox
-nose
-flake8
-coverage
-nose-htmloutput
+tox #license=MIT
+nose #license=LGPLv2.1
+flake8 #license=MIT
+coverage #license=ASLv2.0
+nose-htmloutput #license=BSD
