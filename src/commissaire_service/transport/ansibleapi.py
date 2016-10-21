@@ -26,7 +26,7 @@ from time import sleep
 from .ansible_wrapper import gather_facts, execute_playbook
 
 
-class Transport:
+class Transport:  # pragma: no cover
     """
     Transport using Ansible.
     """

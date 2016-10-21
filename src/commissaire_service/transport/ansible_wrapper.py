@@ -31,7 +31,7 @@ handler.formatter = logging.Formatter('%(name)s - %(message)s')
 logger.addHandler(handler)
 
 
-def get_inventory_file(hosts):
+def get_inventory_file(hosts):  # pragma: no cover
     """
     Set up an --inventory-file option for the Ansible CLI.
 
@@ -52,7 +52,7 @@ def get_inventory_file(hosts):
     return ['--inventory-file', hosts]
 
 
-def gather_facts(host, args=[]):
+def gather_facts(host, args=[]):  # pragma: no cover
     """
     Returns a dictionary of facts gathered by Ansible from a host.
 
@@ -86,7 +86,7 @@ def gather_facts(host, args=[]):
         raise error
 
 
-def execute_playbook(playbook, hosts, args=[]):
+def execute_playbook(playbook, hosts, args=[]):  # pragma: no cover
     """
     Executes a playbook file for the given set of hosts, passing any
     additional command-line arguments to the playbook command.
