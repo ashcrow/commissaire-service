@@ -65,6 +65,9 @@ setup(
              'commissaire_service.storage:main'),
             ('commissaire-investigator-service = '
              'commissaire_service.investigator:main'),
+            ('commissaire-watcher-service = '
+             'commissaire_service.watcher:main'),
+
         ],
     }
 )
