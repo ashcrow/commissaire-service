@@ -113,7 +113,7 @@ class ServiceManager:
 
 class CommissaireService(ConsumerMixin, BusMixin):
     """
-    An example prototype CommissaireService base class.
+    Commissaire service class.
     """
 
     def __init__(self, exchange_name, connection_url, qkwargs):
@@ -127,8 +127,9 @@ class CommissaireService(ConsumerMixin, BusMixin):
         :param qkwargs: One or more dicts keyword arguments for queue creation
         :type qkwargs: list
         """
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.debug('Initializing {0}'.format(self.__class__.__name__))
+        name = self.__class__.__name__
+        self.logger = logging.getLogger(name)
+        self.logger.debug('Initializing {0}'.format(name))
         self.connection = Connection(connection_url)
         self._channel = self.connection.channel()
         self._exchange = Exchange(
@@ -146,7 +147,7 @@ class CommissaireService(ConsumerMixin, BusMixin):
 
         # Create producer for publishing on topics
         self.producer = Producer(self._channel, self._exchange)
-        self.logger.debug('Initializing finished')
+        self.logger.debug('Initializing of {} finished'.format(name))
 
     def get_consumers(self, Consumer, channel):
         """
@@ -164,26 +165,13 @@ class CommissaireService(ConsumerMixin, BusMixin):
         for queue in self._queues:
             self.logger.debug('Will consume on {0}'.format(queue.name))
             consumers.append(
-                Consumer(queue, callbacks=[self._wrap_on_message]))
+                Consumer(queue, callbacks=[self.on_message]))
         self.logger.debug('Consumers: {}'.format(consumers))
         return consumers
 
     def on_message(self, body, message):
         """
-        Called when a non-jsonrpc message arrives.
-
-        :param body: Body of the message.
-        :type body: dict
-        :param message: The message instance.
-        :type message: kombu.message.Message
-        """
-        self.logger.error(
-            'Dropping unknown message: payload="{}", properties="{}"'.format(
-                body, message.properties))
-
-    def _wrap_on_message(self, body, message):
-        """
-        Wraps on_message for jsonrpc routing and logging.
+        Called when a new message arrives.
 
         :param body: Body of the message.
         :type body: dict or json string
@@ -218,9 +206,11 @@ class CommissaireService(ConsumerMixin, BusMixin):
 
                 self.logger.debug('Result for "{}": "{}"'.format(
                     response['id'], result))
-            # Otherwise send it to on_message
             else:
-                self.on_message(body, message)
+                # Drop it
+                self.logger.error(
+                    'Dropping unknown message: payload="{}", '
+                    'properties="{}"'.format(body, message.properties))
         except Exception as error:
             jsonrpc_error_code = -32600
             # If there is an attribute error then use the Method Not Found

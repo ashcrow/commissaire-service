@@ -94,7 +94,7 @@ class TestCommissaireService(TestCase):
         self.assertEquals(1, len(consumers))
         # With 1 callback pointing to the message wrapper
         Consumer.assert_called_once_with(
-            mock.ANY, callbacks=[self.service_instance._wrap_on_message])
+            mock.ANY, callbacks=[self.service_instance.on_message])
 
     def test_on_message(self):
         """
@@ -124,9 +124,9 @@ class TestCommissaireService(TestCase):
         self.service_instance.connection.SimpleQueue.__call__(
             ).close.assert_called_once_with()
 
-    def test__wrap_on_message_with_exposed_method(self):
+    def test_on_message_with_exposed_method(self):
         """
-        Verify ServiceManager._wrap_on_message routes requests properly.
+        Verify ServiceManager.on_message routes requests properly.
         """
         body = {
             'jsonrpc': '2.0',
@@ -139,14 +139,14 @@ class TestCommissaireService(TestCase):
             properties={'reply_to': 'test_queue'},
             delivery_info={'routing_key': 'test.method'})
         self.service_instance.on_method = mock.MagicMock(return_value='{}')
-        self.service_instance._wrap_on_message(body, message)
+        self.service_instance.on_message(body, message)
         # The on_method should have been called
         self.service_instance.on_method.assert_called_once_with(
             kwarg='value', message=message)
 
-    def test__wrap_on_message_without_exposed_method(self):
+    def test_on_message_without_exposed_method(self):
         """
-        Verify ServiceManager._wrap_on_message returns error if method doesn't exist.
+        Verify ServiceManager.on_message returns error if method doesn't exist.
         """
         body = {
             'jsonrpc': '2.0',
@@ -158,18 +158,18 @@ class TestCommissaireService(TestCase):
             payload=body,
             properties={'reply_to': 'test_queue'},
             delivery_info={'routing_key': 'test.doesnotexist'})
-        self.service_instance._wrap_on_message(body, message)
+        self.service_instance.on_message(body, message)
         self.service_instance.connection.SimpleQueue.assert_called_once_with(
             'test_queue')
 
-    def test__wrap_on_message_with_bad_message(self):
+    def test_on_message_with_bad_message(self):
         """
-        Verify ServiceManager._wrap_on_message forwards to on_message on non jsonrpc messages.
+        Verify ServiceManager.on_message forwards to on_message on non jsonrpc messages.
         """
         self.service_instance.on_message =  mock.MagicMock()
         body = '[]'
         message = mock.MagicMock(
             payload=body,
             properties={'reply_to': 'test_queue'})
-        self.service_instance._wrap_on_message(body, message)
+        self.service_instance.on_message(body, message)
         self.assertEquals(1, self.service_instance.on_message.call_count)
