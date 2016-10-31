@@ -1,0 +1,9 @@
+[Unit]
+Description=Commissaire Investigator Service
+Documentation=https://commissaire.readthedocs.io/
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/commissaire-investigator-service
+PIDFile=/var/run/commissaire-investigator-service.pid
+Type=simple

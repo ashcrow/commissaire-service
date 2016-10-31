@@ -1,0 +1,9 @@
+[Unit]
+Description=Commissaire Storage Service
+Documentation=https://commissaire.readthedocs.io/
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/commissaire-storage-service -c /etc/commisasire/storage.conf
+PIDFile=/var/run/commissaire-storage-service.pid
+Type=simple

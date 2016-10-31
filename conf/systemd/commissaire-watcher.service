@@ -1,0 +1,9 @@
+[Unit]
+Description=Commissaire Watcher Service
+Documentation=https://commissaire.readthedocs.io/
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/commissaire-watcher-service
+PIDFile=/var/run/commissaire-watcher-service.pid
+Type=simple
