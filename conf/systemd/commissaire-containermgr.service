@@ -1,0 +1,12 @@
+[Unit]
+Description=Commissaire Container Manager Service
+Documentation=https://commissaire.readthedocs.io/
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/commissaire-containermgr-service -c /etc/commisasire/containermgr.conf
+PIDFile=/var/run/commissaire-containermgr-service.pid
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
