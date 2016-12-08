@@ -15,6 +15,7 @@
 
 import importlib
 
+from commissaire.containermgr import ContainerManagerError
 from commissaire.util.config import ConfigurationError, read_config_file
 
 from commissaire_service.service import CommissaireService
@@ -172,14 +173,18 @@ class ContainerManagerService(CommissaireService):
         try:
             container_handler = self._manager.handlers[container_handler_name]
             result = getattr(container_handler, method).__call__(address)
-            self.logger.debug(result)
+
+            self.logger.info(
+                '{} called for {} via the container manager {}'.format(
+                    method, address, container_handler_name))
+            self.logger.debug('Result: {}'.format(result))
 
             if bool(result):
-                self.logger.info(
-                    '{} called for {} via the container manager {}'.format(
-                        method, address, container_handler_name))
-                self.logger.debug('Result: {}'.format(result))
                 return result
+
+        except ContainerManagerError as error:
+            self.logger.info('{} raised ContainerManagerError: {}'.format(
+                error))
         except KeyError:
             self.logger.error('ContainerHandler {} does not exist.'.format(
                 container_handler_name))
