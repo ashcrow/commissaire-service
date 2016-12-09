@@ -49,7 +49,8 @@ class ContainerManagerService(CommissaireService):
         super().__init__(exchange_name, connection_url, queue_kwargs)
         self._manager = ContainerHandlerManager()
 
-        config_data = read_config_file(config_file)
+        config_data = read_config_file(
+            config_file, '/etc/commissaire/containermgr.conf')
         container_handlers = config_data.get('container_handlers', [])
 
         if len(container_handlers) == 0:

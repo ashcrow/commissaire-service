@@ -4,7 +4,7 @@ Documentation=https://commissaire.readthedocs.io/
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/commissaire-containermgr-service -c /etc/commisasire/containermgr.conf
+ExecStart=/usr/bin/commissaire-containermgr-service
 PIDFile=/var/run/commissaire-containermgr-service.pid
 Type=simple
 
