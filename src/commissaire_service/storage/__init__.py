@@ -57,7 +57,8 @@ class StorageService(CommissaireService):
                              if isinstance(v, type) and
                              issubclass(v, models.Model)}
 
-        config_data = read_config_file(config_file)
+        config_data = read_config_file(
+            config_file, '/etc/commissaire/storage.conf')
         store_handlers = config_data.get('storage_handlers', [])
 
         # Configure store handlers from user data.
