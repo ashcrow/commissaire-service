@@ -236,7 +236,7 @@ def main():  # pragma: no cover
         service = ContainerManagerService(
             exchange_name=args.bus_exchange,
             connection_url=args.bus_uri,
-            config_file=args.config)
+            config_file=args.config_file)
         service.run()
     except KeyboardInterrupt:
         pass
