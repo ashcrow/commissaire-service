@@ -1,8 +1,12 @@
 {%- set OPTIONS="" %}
 
 {%- if commissaire_etcd_server_url is defined %}
+# Old style options
 FLANNEL_ETCD="{{ commissaire_etcd_server_url }}"
 FLANNEL_ETCD_KEY="{{ commissaire_flannel_key }}"
+# New style options
+FLANNEL_ETCD_ENDPOINTS="{{ commissaire_etcd_server_url }}"
+FLANNEL_ETCD_PREFIX="{{ commissaire_flannel_key }}"
 {%- elif commissaire_flanneld_server is defined %}
 {#- commissaire_flanneld_server indicates a client/server model #}
 {%- set OPTIONS=OPTIONS ~ "--remote=" ~ commissaire_flanneld_server ~ " " %}
