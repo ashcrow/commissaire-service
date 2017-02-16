@@ -92,7 +92,7 @@ class StorageService(CommissaireService):
                 '{}'.format(config))
         try:
             module = importlib.import_module(module_name)
-            handler_type = getattr(module, 'StoreHandler')
+            handler_type = getattr(module, 'PluginClass')
         except ImportError:
             raise ConfigurationError(
                 'Invalid store handler module name: {}'.format(module_name))
