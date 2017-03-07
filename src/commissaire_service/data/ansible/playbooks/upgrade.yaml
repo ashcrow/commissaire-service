@@ -17,6 +17,7 @@
 # Apply to all hosts; a custom inventory is provided for each play.
 - hosts: all
   name: upgrade
+  serial: 1
   gather_facts: no
   tasks:
     - name: Checking for atomic model

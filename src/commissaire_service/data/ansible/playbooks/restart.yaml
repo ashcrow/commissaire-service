@@ -17,6 +17,7 @@
 # Apply to all hosts; a custom inventory is provided for each play.
 - hosts: all
   name: restart
+  serial: 1
   gather_facts: no
   tasks:
     - name: restart host
@@ -24,3 +25,6 @@
       async: 1
       poll: 0
       ignore_errors: false
+    - name: Wait for host to come back online
+      become: no
+      local_action: wait_for host={{ inventory_hostname }} port=22 state='started' delay=5 timeout=200
