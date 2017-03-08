@@ -18,6 +18,15 @@ Abstraction of commands that change across operating systems.
 
 import importlib
 
+from commissaire.errors import CommissaireError
+
+
+class OSCmdError(CommissaireError):
+    """
+    OSCmd specific errors.
+    """
+    pass
+
 
 class OSCmdBase:
     """
@@ -113,5 +122,4 @@ def get_oscmd(os_type):
         module = importlib.import_module(module_name)
         return getattr(module, 'OSCmd')
     except ImportError:
-        # TODO: Make this a specific exception
-        raise Exception('No OSCmd class for {}'.format(os_type))
+        raise OSCmdError('No OSCmd class for {}'.format(os_type))
