@@ -43,5 +43,5 @@ class Test_add_service_arguments(TestCase):
 
         # Check for presence of defaults.
         self.assertIsNone(args.config_file)
+        self.assertIsNone(args.bus_uri)
         self.assertIsNotNone(args.bus_exchange)
-        self.assertIsNotNone(args.bus_uri)

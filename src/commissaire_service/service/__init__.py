@@ -38,7 +38,7 @@ def add_service_arguments(parser):
 
         --config-file   (string, no default)
         --bus-exchange  (string, with default)
-        --bus-uri       (string, with default)
+        --bus-uri       (string, no default)
 
     :param parser: An argument parser instance
     :type parser: argparse.ArgumentParser
@@ -51,7 +51,6 @@ def add_service_arguments(parser):
         help='Message bus exchange name.')
     parser.add_argument(
         '--bus-uri', type=str, metavar='BUS_URI',
-        default='redis://127.0.0.1:6379/',  # FIXME Remove before release
         help=(
             'Message bus connection URI. See: '
             'http://kombu.readthedocs.io/en/latest/userguide/connections.html'))  # noqa
