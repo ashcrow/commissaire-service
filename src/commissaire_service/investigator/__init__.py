@@ -170,11 +170,12 @@ class InvestigatorService(CommissaireService):
                     network.name, network.type))
             transport.bootstrap(
                 address, key.path, oscmd, etcd_config, network)
+            host.status = 'disassociated'
         except Exception as error:
             self.logger.warn(
                 'Unable to start bootstraping for {}: {}'.format(
                     address, str(error)))
-            host.status = 'disassociated'
+            host.status = 'failed'
             key.remove()
             raise error
         finally:
@@ -183,7 +184,6 @@ class InvestigatorService(CommissaireService):
 
         # Register with container manager (if applicable).
         try:
-            host.status = 'disassociated'
             if container_manager:
                 self.request(
                     'container.register_node',
