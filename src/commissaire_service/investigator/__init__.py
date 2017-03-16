@@ -170,7 +170,6 @@ class InvestigatorService(CommissaireService):
                     network.name, network.type))
             transport.bootstrap(
                 address, key.path, oscmd, etcd_config, network)
-            host.status = 'inactive'
         except Exception as error:
             self.logger.warn(
                 'Unable to start bootstraping for {}: {}'.format(
