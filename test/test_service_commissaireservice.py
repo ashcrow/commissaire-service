@@ -48,7 +48,8 @@ class TestCommissaireService(TestCase):
         self.service_instance = CommissaireService(
             'commissaire',
             'redis://127.0.0.1:6379/',
-            self.queue_kwargs
+            self.queue_kwargs,
+            (None, None)
         )
 
     def tearDown(self):

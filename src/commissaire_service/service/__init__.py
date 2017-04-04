@@ -25,6 +25,7 @@ from time import sleep
 
 from commissaire import constants as C
 from commissaire.bus import BusMixin, RemoteProcedureCallError
+from commissaire.util.config import read_config_file
 
 from kombu import Connection, Exchange, Producer, Queue
 from kombu.mixins import ConsumerMixin
@@ -143,7 +144,7 @@ class CommissaireService(ConsumerMixin, BusMixin):
     Commissaire service class.
     """
 
-    def __init__(self, exchange_name, connection_url, qkwargs):
+    def __init__(self, exchange_name, connection_url, qkwargs, config_files):
         """
         Initializes a new Service instance.
 
@@ -153,10 +154,32 @@ class CommissaireService(ConsumerMixin, BusMixin):
         :type connection_url: str
         :param qkwargs: One or more dicts keyword arguments for queue creation
         :type qkwargs: list
+        :param config_files: Paths to the configuration file locations.
+        :type config_files: tuple(str, str)
         """
         name = self.__class__.__name__
         self.logger = logging.getLogger(name)
         self.logger.debug('Initializing {}'.format(name))
+
+        self._config_data = {}
+
+        # If we are given no default, use the global one
+        if len(config_files) > 0 and config_files[1] is None:
+            config_files = list(config_files)
+            config_files[1] = C.DEFAULT_CONFIGURATION_FILE
+
+        # Read the configuration file
+        self._config_data = read_config_file(*config_files)
+
+        if connection_url is None and 'bus_uri' in self._config_data:
+            connection_url = self._config_data.get('bus_uri')
+            self.logger.debug(
+                'Using connection_url=%s from config file', connection_url)
+        if exchange_name is None and 'exchange_name' in self._config_data:
+            self.logger.debug(
+                'Using exchange_name=%s from config file', exchange_name)
+            exchange_name = self._config_data.get('bus_exchange')
+
         self.connection = Connection(connection_url)
         self._channel = self.connection.channel()
         self._exchange = Exchange(

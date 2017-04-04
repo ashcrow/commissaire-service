@@ -20,8 +20,7 @@ import commissaire.models as models
 
 from commissaire import constants as C
 from commissaire.storage import StoreHandlerBase
-from commissaire.util.config import (
-    ConfigurationError, read_config_file, import_plugin)
+from commissaire.util.config import (ConfigurationError, import_plugin)
 
 from commissaire_service.service import (
     CommissaireService, add_service_arguments)
@@ -50,7 +49,12 @@ class StorageService(CommissaireService):
         queue_kwargs = [
             {'routing_key': 'storage.*'},
         ]
-        super().__init__(exchange_name, connection_url, queue_kwargs)
+
+        super().__init__(
+            exchange_name,
+            connection_url,
+            queue_kwargs,
+            config_files=(config_file, '/etc/commissaire/storage.conf'))
 
         self._manager = StoreHandlerManager()
 
@@ -59,9 +63,7 @@ class StorageService(CommissaireService):
                              if isinstance(v, type) and
                              issubclass(v, models.Model)}
 
-        config_data = read_config_file(
-            config_file, '/etc/commissaire/storage.conf')
-        store_handlers = config_data.get('storage_handlers', [])
+        store_handlers = self._config_data.get('storage_handlers', [])
 
         # Configure store handlers from user data.
         if len(store_handlers) == 0:

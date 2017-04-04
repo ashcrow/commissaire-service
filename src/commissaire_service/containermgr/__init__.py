@@ -18,7 +18,7 @@ from commissaire import models
 from commissaire.bus import ContainerManagerError
 from commissaire.containermgr import ContainerManagerBase
 from commissaire.storage.client import StorageClient
-from commissaire.util.config import read_config_file, import_plugin
+from commissaire.util.config import import_plugin
 
 from commissaire_service.service import (
     CommissaireService, add_service_arguments)
@@ -46,12 +46,14 @@ class ContainerManagerService(CommissaireService):
             'routing_key': 'container.*',
             'exclusive': False,
         }]
-        super().__init__(exchange_name, connection_url, queue_kwargs)
+        super().__init__(
+            exchange_name,
+            connection_url,
+            queue_kwargs,
+            config_files=(config_file, '/etc/commissaire/containermgr.conf'))
+
         self.storage = StorageClient(self)
         self.managers = {}
-
-        # Apply any logging configuration for this service.
-        read_config_file(config_file, '/etc/commissaire/containermgr.conf')
 
     def refresh_managers(self):
         """
