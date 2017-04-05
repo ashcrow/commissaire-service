@@ -29,6 +29,9 @@ class ContainerManagerService(CommissaireService):
     Provides access to Container Managers.
     """
 
+    #: Default configuration file
+    _default_config_file = '/etc/commissaire/containermgr.conf'
+
     def __init__(self, exchange_name, connection_url, config_file=None):
         """
         Creates a new ContainerManagerService.  If config_file is omitted,
@@ -50,7 +53,7 @@ class ContainerManagerService(CommissaireService):
             exchange_name,
             connection_url,
             queue_kwargs,
-            config_files=(config_file, '/etc/commissaire/containermgr.conf'))
+            config_file=config_file)
 
         self.storage = StorageClient(self)
         self.managers = {}

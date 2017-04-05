@@ -37,6 +37,9 @@ class WatcherService(CommissaireService):
     Periodically connects to hosts to check their status.
     """
 
+    #: Default configuration file
+    _default_config_file = '/etc/commissaire/watcher.conf'
+
     def __init__(self, exchange_name, connection_url, config_file=None):
         """
         Creates a new WatcherService.  If config_file is omitted,
@@ -61,7 +64,7 @@ class WatcherService(CommissaireService):
             exchange_name,
             connection_url,
             queue_kwargs,
-            config_files=(config_file, '/etc/commissaire/watcher.conf'))
+            config_file=config_file)
 
         self.storage = StorageClient(self)
 

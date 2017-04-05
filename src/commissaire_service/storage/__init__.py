@@ -33,6 +33,9 @@ class StorageService(CommissaireService):
     Provides access to data stores to other services.
     """
 
+    #: Default configuration file
+    _default_config_file = '/etc/commissaire/storage.conf'
+
     def __init__(self, exchange_name, connection_url, config_file=None):
         """
         Creates a new StorageService and sets up StoreHandler instances
@@ -54,7 +57,7 @@ class StorageService(CommissaireService):
             exchange_name,
             connection_url,
             queue_kwargs,
-            config_files=(config_file, '/etc/commissaire/storage.conf'))
+            config_file=config_file)
 
         self._manager = StoreHandlerManager()
 

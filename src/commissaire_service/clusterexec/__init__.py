@@ -33,6 +33,9 @@ class ClusterExecService(CommissaireService):
     Executes operations over a cluster by way of remote shell commands.
     """
 
+    #: Default configuration file
+    _default_config_file = '/etc/commissaire/clusterexec.conf'
+
     def __init__(self, exchange_name, connection_url, config_file=None):
         """
         Creates a new ClusterExecService.  If config_file is omitted,
@@ -53,7 +56,7 @@ class ClusterExecService(CommissaireService):
             exchange_name,
             connection_url,
             queue_kwargs,
-            config_files=(config_file, '/etc/commissaire/clusterexec.conf'))
+            config_file=config_file)
 
         self.storage = StorageClient(self)
 

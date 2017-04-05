@@ -74,6 +74,7 @@ class ServiceManager:
     """
     Multiprocessed Service Manager.
     """
+
     def __init__(self, service_class, process_count, exchange_name,
                  connection_url, qkwargs, **kwargs):
         """
@@ -144,7 +145,12 @@ class CommissaireService(ConsumerMixin, BusMixin):
     Commissaire service class.
     """
 
-    def __init__(self, exchange_name, connection_url, qkwargs, config_files):
+    #: Default configuration file if none is specified. Subclasses
+    #: should override this.
+    _default_config_file = C.DEFAULT_CONFIGURATION_FILE
+
+    def __init__(
+            self, exchange_name, connection_url, qkwargs, config_file=None):
         """
         Initializes a new Service instance.
 
@@ -154,22 +160,17 @@ class CommissaireService(ConsumerMixin, BusMixin):
         :type connection_url: str
         :param qkwargs: One or more dicts keyword arguments for queue creation
         :type qkwargs: list
-        :param config_files: Paths to the configuration file locations.
-        :type config_files: tuple(str, str)
+        :param config_file: Path to the configuration file location.
+        :type config_file: str or None
         """
         name = self.__class__.__name__
         self.logger = logging.getLogger(name)
         self.logger.debug('Initializing {}'.format(name))
 
-        self._config_data = {}
-
         # If we are given no default, use the global one
-        if len(config_files) > 0 and config_files[1] is None:
-            config_files = list(config_files)
-            config_files[1] = C.DEFAULT_CONFIGURATION_FILE
-
         # Read the configuration file
-        self._config_data = read_config_file(*config_files)
+        self._config_data = read_config_file(
+            config_file, self._default_config_file)
 
         if connection_url is None and 'bus_uri' in self._config_data:
             connection_url = self._config_data.get('bus_uri')

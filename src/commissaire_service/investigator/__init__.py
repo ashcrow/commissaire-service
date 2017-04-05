@@ -34,6 +34,9 @@ class InvestigatorService(CommissaireService):
     Investigates new hosts to retrieve and store facts.
     """
 
+    #: Default configuration file
+    _default_config_file = '/etc/commissaire/investigator.conf'
+
     def __init__(self, exchange_name, connection_url, config_file=None):
         """
         Creates a new InvestigatorService.  If config_file is omitted,
@@ -54,7 +57,7 @@ class InvestigatorService(CommissaireService):
             exchange_name,
             connection_url,
             queue_kwargs,
-            config_files=(config_file, '/etc/commissaire/investigator.conf'))
+            config_files=config_file)
 
         self.storage = StorageClient(self)
 
