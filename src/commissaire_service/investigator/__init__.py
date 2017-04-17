@@ -17,7 +17,7 @@ import json
 
 import commissaire.constants as C
 
-from commissaire.models import Cluster, Host, Network
+from commissaire.models import Cluster, Host, HostCreds, Network
 from commissaire.storage.client import StorageClient
 from commissaire.util.config import ConfigurationError
 from commissaire.util.date import formatted_dt
@@ -116,9 +116,10 @@ class InvestigatorService(CommissaireService):
             self.logger.debug('Related cluster: {}'.format(cluster_data))
 
         host = self.storage.get_host(address)
+        host_creds = self.storage.get(HostCreds.new(address=host.address))
         transport = ansibleapi.Transport(host.remote_user)
 
-        key = TemporarySSHKey(host, self.logger)
+        key = TemporarySSHKey(host_creds, self.logger)
         try:
             key.create()
         except Exception as error:
