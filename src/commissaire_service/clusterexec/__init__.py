@@ -17,7 +17,7 @@ import json
 
 from commissaire import constants as C
 from commissaire.models import (
-    ClusterDeploy, ClusterUpgrade, ClusterRestart)
+    ClusterDeploy, ClusterUpgrade, ClusterRestart, HostCreds)
 from commissaire.storage.client import StorageClient
 from commissaire.util.date import formatted_dt
 from commissaire.util.ssh import TemporarySSHKey
@@ -124,8 +124,9 @@ class ClusterExecService(CommissaireService):
             self.logger.warn('No hosts in cluster "{}"'.format(cluster_name))
 
         for address in cluster.hostset:
+            # Get initial data
             host = self.storage.get_host(address)
-
+            host_creds = self.storage.get(HostCreds.new(address=host.address))
             oscmd = get_oscmd(host.os)
 
             # os_command is only used for logging
@@ -136,9 +137,9 @@ class ClusterExecService(CommissaireService):
             model_instance.in_process.append(host.address)
             self.storage.save(model_instance)
 
-            with TemporarySSHKey(host, self.logger) as key:
+            with TemporarySSHKey(host_creds, self.logger) as key:
                 try:
-                    transport = ansibleapi.Transport(host.remote_user)
+                    transport = ansibleapi.Transport(host_creds.remote_user)
                     method = getattr(transport, command_name)
                     method(host.address, key.path, oscmd, command_args)
                 except Exception as error:
