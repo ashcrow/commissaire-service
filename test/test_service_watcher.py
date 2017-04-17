@@ -126,6 +126,8 @@ class TestCommissaireService(TestCase):
             self.service_instance.storage.get_host.return_value = models.Host.new(
                 address='127.0.0.1',
                 last_check=datetime.datetime.min.isoformat())
+            self.service_instance.storage.get.return_value = models.HostCreds.new(
+                address='127.0.0.1')
             self.service_instance.storage.save.return_value = None
             self.service_instance._check('127.0.0.1')
             # The transport method should have been called once

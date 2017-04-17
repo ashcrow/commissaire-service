@@ -22,7 +22,7 @@ from datetime import datetime, timedelta
 from time import sleep
 
 from commissaire import constants as C
-from commissaire.models import WatcherRecord
+from commissaire.models import HostCreds, WatcherRecord
 from commissaire.storage.client import StorageClient
 from commissaire.util.date import formatted_dt
 from commissaire.util.ssh import TemporarySSHKey
@@ -118,9 +118,11 @@ class WatcherService(CommissaireService):
         self.logger.info('Checking host "{}".'.format(address))
 
         host = self.storage.get_host(address)
-        transport = ansibleapi.Transport(host.remote_user)
+        host_creds = self.storage.get(HostCreds.new(address=host.address))
 
-        with TemporarySSHKey(host, self.logger) as key:
+        transport = ansibleapi.Transport(host_creds.remote_user)
+
+        with TemporarySSHKey(host_creds, self.logger) as key:
             try:
                 self.logger.debug(
                     'Starting watcher run for host "{}"'.format(address))
